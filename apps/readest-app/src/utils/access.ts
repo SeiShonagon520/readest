@@ -41,10 +41,9 @@ export const getUserProfilePlan = (token: string): UserPlan => {
  * extension) stay open to free users — the gate is the personal email
  * inbox only.
  */
-export const EMAIL_IN_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
+export const EMAIL_IN_PLANS: readonly UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
-export const isEmailInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  isCustomizationAllowed(plan, customizationPurchased);
+export const isEmailInPlan = (plan: UserPlan, customizationPurchased?: boolean): boolean => true;
 
 /**
  * Plans that include third-party cloud sync (WebDAV / Google Drive): any paid
@@ -54,8 +53,8 @@ export const isEmailInPlan = (plan: UserPlan, customizationPurchased: boolean): 
  */
 export const CLOUD_SYNC_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
 
-export const isCloudSyncInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  isCustomizationAllowed(plan, customizationPurchased);
+export const isCloudSyncInPlan = (plan: UserPlan, customizationPurchased?: boolean): boolean =>
+  true;
 
 /**
  * Master switch for the third-party cloud-sync premium paywall. ON: cloud
@@ -66,14 +65,14 @@ export const isCloudSyncInPlan = (plan: UserPlan, customizationPurchased: boolea
  * Every gate goes through {@link isCloudSyncAllowed}, so this flag is the
  * whole toggle.
  */
-export const CLOUD_SYNC_REQUIRES_PREMIUM = true;
+export const CLOUD_SYNC_REQUIRES_PREMIUM = false;
 
 /**
  * Whether third-party cloud sync is available for a plan. Falls back to the
  * {@link isCloudSyncInPlan} paywall while {@link CLOUD_SYNC_REQUIRES_PREMIUM}
  * is on; flipping the switch off ungates every plan.
  */
-export const isCloudSyncAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
+export const isCloudSyncAllowed = (plan: UserPlan, customizationPurchased?: boolean): boolean =>
   !CLOUD_SYNC_REQUIRES_PREMIUM || isCloudSyncInPlan(plan, customizationPurchased);
 
 /**
@@ -84,8 +83,7 @@ export const isCloudSyncAllowed = (plan: UserPlan, customizationPurchased: boole
  */
 export const TTS_CACHE_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
 
-export const isTTSCacheInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  isCustomizationAllowed(plan, customizationPurchased);
+export const isTTSCacheInPlan = (plan: UserPlan, customizationPurchased?: boolean): boolean => true;
 
 /**
  * Master switch for the offline-audio premium paywall, mirroring
@@ -94,9 +92,9 @@ export const isTTSCacheInPlan = (plan: UserPlan, customizationPurchased: boolean
  * automatic playback cache (audio kept as the user listens) is unaffected —
  * only the explicit download UI is gated.
  */
-export const TTS_CACHE_REQUIRES_PREMIUM = true;
+export const TTS_CACHE_REQUIRES_PREMIUM = false;
 
-export const isTTSCacheAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
+export const isTTSCacheAllowed = (plan: UserPlan, customizationPurchased?: boolean): boolean =>
   !TTS_CACHE_REQUIRES_PREMIUM || isTTSCacheInPlan(plan, customizationPurchased);
 
 /**
@@ -109,8 +107,8 @@ export const isTTSCacheAllowed = (plan: UserPlan, customizationPurchased: boolea
  */
 export const NEARBY_PAIRING_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
 
-export const isNearbyPairingInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  isCustomizationAllowed(plan, customizationPurchased);
+export const isNearbyPairingInPlan = (plan: UserPlan, customizationPurchased?: boolean): boolean =>
+  true;
 
 /**
  * Master switch for the pairing paywall, mirroring
@@ -119,9 +117,9 @@ export const isNearbyPairingInPlan = (plan: UserPlan, customizationPurchased: bo
  * Flipping it off ungates every plan. Existing pairing records always
  * persist; only the auto-accept behavior is gated.
  */
-export const NEARBY_PAIRING_REQUIRES_PREMIUM = true;
+export const NEARBY_PAIRING_REQUIRES_PREMIUM = false;
 
-export const isNearbyPairingAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
+export const isNearbyPairingAllowed = (plan: UserPlan, customizationPurchased?: boolean): boolean =>
   !NEARBY_PAIRING_REQUIRES_PREMIUM || isNearbyPairingInPlan(plan, customizationPurchased);
 
 /**
@@ -130,8 +128,7 @@ export const isNearbyPairingAllowed = (plan: UserPlan, customizationPurchased: b
  * before the claim existed, which reads as not purchased.
  */
 export const getCustomizationPurchased = (token: string): boolean => {
-  const data = jwtDecode<Token>(token) || {};
-  return data['customization_purchased'] === true;
+  return true;
 };
 
 /**
@@ -161,8 +158,10 @@ export const isSelfHosted = (): boolean =>
  * The single gate for premium features: a self-hosted deployment, a paid
  * subscription, or the Full Customization unlock bought outright.
  */
-export const isCustomizationAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  isSelfHosted() || customizationPurchased || PREMIUM_PLANS.includes(plan);
+export const isCustomizationAllowed = (
+  plan?: UserPlan,
+  customizationPurchased?: boolean,
+): boolean => true;
 
 export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace
 

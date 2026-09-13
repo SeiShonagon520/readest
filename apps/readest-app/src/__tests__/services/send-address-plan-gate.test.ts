@@ -100,45 +100,18 @@ beforeEach(() => {
 });
 
 describe('isEmailInPlan helper', () => {
-  test('allows plus, pro, and lifetime (purchase)', () => {
-    expect(isEmailInPlan('plus', false)).toBe(true);
-    expect(isEmailInPlan('pro', false)).toBe(true);
-    expect(isEmailInPlan('purchase', false)).toBe(false);
-  });
-
-  test('blocks the free tier', () => {
-    expect(isEmailInPlan('free', false)).toBe(false);
+  test.each<UserPlan>(['free', 'plus', 'pro', 'purchase'])('allows the %s plan', (plan) => {
+    expect(isEmailInPlan(plan)).toBe(true);
   });
 });
 
 describe('/api/send/address — plan gate', () => {
-  test('returns 403 with code=plan_required for free users on GET (lazy-create blocked)', async () => {
-    getUserProfilePlanMock.mockReturnValue('free' satisfies UserPlan);
-    const res = makeRes();
-    await addressHandler(makeReq('GET'), res as unknown as NextApiResponse);
-
-    expect(res._status).toBe(403);
-    expect(res._body).toMatchObject({
-      code: 'plan_required',
-      plan: 'free',
-      requiredPlans: ['plus', 'pro', 'purchase'],
-    });
-    // Critically: no Supabase access on the gate-blocked path. A free
-    // user must never get a row allocated in `send_addresses`.
-    expect(supabaseTouched).not.toHaveBeenCalled();
-  });
-
-  test('returns 403 for free users on POST (rotation blocked)', async () => {
-    getUserProfilePlanMock.mockReturnValue('free' satisfies UserPlan);
-    const res = makeRes();
-    await addressHandler(makeReq('POST', { slug: 'myname' }), res as unknown as NextApiResponse);
-
-    expect(res._status).toBe(403);
-    expect(res._body).toMatchObject({ code: 'plan_required' });
-    expect(supabaseTouched).not.toHaveBeenCalled();
-  });
-
-  test.each<UserPlan>(['plus', 'pro'])('lets %s users through the gate', async (plan) => {
+  test.each<UserPlan>([
+    'free',
+    'plus',
+    'pro',
+    'purchase',
+  ])('lets %s users through the gate', async (plan) => {
     getUserProfilePlanMock.mockReturnValue(plan);
     const res = makeRes();
     await addressHandler(makeReq('GET'), res as unknown as NextApiResponse);
@@ -150,30 +123,12 @@ describe('/api/send/address — plan gate', () => {
 });
 
 describe('/api/send/senders — plan gate', () => {
-  test('returns 403 for free users on GET (list blocked)', async () => {
-    getUserProfilePlanMock.mockReturnValue('free' satisfies UserPlan);
-    const res = makeRes();
-    await sendersHandler(makeReq('GET'), res as unknown as NextApiResponse);
-
-    expect(res._status).toBe(403);
-    expect(res._body).toMatchObject({ code: 'plan_required' });
-    expect(supabaseTouched).not.toHaveBeenCalled();
-  });
-
-  test('returns 403 for free users on POST (add sender blocked)', async () => {
-    getUserProfilePlanMock.mockReturnValue('free' satisfies UserPlan);
-    const res = makeRes();
-    await sendersHandler(
-      makeReq('POST', { email: 'friend@example.com' }),
-      res as unknown as NextApiResponse,
-    );
-
-    expect(res._status).toBe(403);
-    expect(res._body).toMatchObject({ code: 'plan_required' });
-    expect(supabaseTouched).not.toHaveBeenCalled();
-  });
-
-  test.each<UserPlan>(['plus', 'pro'])('lets %s users past the gate', async (plan) => {
+  test.each<UserPlan>([
+    'free',
+    'plus',
+    'pro',
+    'purchase',
+  ])('lets %s users past the gate', async (plan) => {
     getUserProfilePlanMock.mockReturnValue(plan);
     const res = makeRes();
     await sendersHandler(makeReq('GET'), res as unknown as NextApiResponse);
@@ -181,16 +136,13 @@ describe('/api/send/senders — plan gate', () => {
     expect(res._status).not.toBe(403);
   });
 
-  // `purchase` means "holds some one-time purchase", which is how a
-  // storage-only buyer presents. Entitlement now rides on the customization
-  // claim, so the plan alone is not enough.
-  test('refuses a storage-only buyer reporting the purchase plan', async () => {
+  test('lets a storage-only buyer reporting the purchase plan past the gate', async () => {
     getUserProfilePlanMock.mockReturnValue('purchase' satisfies UserPlan);
     getCustomizationPurchasedMock.mockReturnValue(false);
     const res = makeRes();
     await sendersHandler(makeReq('GET'), res as unknown as NextApiResponse);
-    expect(res._status).toBe(403);
-    expect(supabaseTouched).not.toHaveBeenCalled();
+    expect(supabaseTouched).toHaveBeenCalled();
+    expect(res._status).not.toBe(403);
   });
 
   test('lets a grandfathered buyer through on the customization claim', async () => {

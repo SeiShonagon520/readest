@@ -18,25 +18,21 @@ import type { EnvConfigType } from '@/services/environment';
 const mockBroadcastGlobalSettings = vi.mocked(broadcastGlobalSettings);
 
 describe('isCloudSyncInPlan', () => {
-  test('any paid plan can use cloud sync', () => {
+  test('every plan can use cloud sync', () => {
     expect(isCloudSyncInPlan('plus', false)).toBe(true);
     expect(isCloudSyncInPlan('pro', false)).toBe(true);
-    // A storage-only buyer reports `purchase` without being entitled.
-    expect(isCloudSyncInPlan('purchase', false)).toBe(false);
-  });
-
-  test('free plan cannot', () => {
-    expect(isCloudSyncInPlan('free', false)).toBe(false);
+    expect(isCloudSyncInPlan('purchase', false)).toBe(true);
+    expect(isCloudSyncInPlan('free', false)).toBe(true);
   });
 });
 
 describe('isCloudSyncAllowed (premium paywall)', () => {
-  test('third-party cloud sync requires a paid plan', () => {
-    expect(CLOUD_SYNC_REQUIRES_PREMIUM).toBe(true);
-    expect(isCloudSyncAllowed('free', false)).toBe(false);
+  test('third-party cloud sync is available to every plan when the paywall is disabled', () => {
+    expect(CLOUD_SYNC_REQUIRES_PREMIUM).toBe(false);
+    expect(isCloudSyncAllowed('free', false)).toBe(true);
     expect(isCloudSyncAllowed('plus', false)).toBe(true);
     expect(isCloudSyncAllowed('pro', false)).toBe(true);
-    expect(isCloudSyncAllowed('purchase', false)).toBe(false);
+    expect(isCloudSyncAllowed('purchase', false)).toBe(true);
   });
 });
 
@@ -289,7 +285,7 @@ describe('isCloudSyncAllowed — customization unlock', () => {
     expect(isCloudSyncAllowed('purchase', true)).toBe(true);
   });
 
-  test('does not entitle a storage-only buyer after the grace period', () => {
-    expect(isCloudSyncAllowed('purchase', false)).toBe(false);
+  test('entitles a storage-only buyer as well', () => {
+    expect(isCloudSyncAllowed('purchase', false)).toBe(true);
   });
 });

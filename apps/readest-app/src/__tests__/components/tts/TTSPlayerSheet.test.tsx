@@ -446,28 +446,26 @@ describe('TTSPlayerSheet', () => {
     expect(routerPush).not.toHaveBeenCalled();
   });
 
-  test('offline audio row: a free user sees a Premium badge and is routed to upgrade', () => {
+  test('offline audio row: a free user has no badge and opens the chapters view', () => {
     mockQuota.userProfilePlan = 'free';
     const props = makeProps({ downloads: makeDownloads() });
     render(<TTSPlayerSheet {...props} />);
-    expect(screen.getByText('Premium')).toBeTruthy();
-    expect(screen.getByText('Download chapters for offline playback')).toBeTruthy();
+    expect(screen.queryByText('Premium')).toBeNull();
+    expect(screen.getByText('1 of 1 downloaded')).toBeTruthy();
     fireEvent.click(screen.getByLabelText('Offline Audio'));
-    expect(routerPush).toHaveBeenCalledWith('/user');
-    expect(props.onClose).toHaveBeenCalled();
-    // The premium chapters view must not open for a free user.
-    expect(screen.queryByText('chapters-view')).toBeNull();
+    expect(screen.getByText('chapters-view')).toBeTruthy();
+    expect(routerPush).not.toHaveBeenCalled();
   });
 
-  test('offline audio row: a signed-out user is routed to sign-in', () => {
+  test('offline audio row: a signed-out user can use the local chapters view', () => {
     mockAuth.user = null;
     mockQuota.userProfilePlan = undefined;
     const props = makeProps({ downloads: makeDownloads() });
     render(<TTSPlayerSheet {...props} />);
-    expect(screen.getByText('Premium')).toBeTruthy();
+    expect(screen.queryByText('Premium')).toBeNull();
     fireEvent.click(screen.getByLabelText('Offline Audio'));
-    expect(routerPush).toHaveBeenCalledWith(expect.stringContaining('/auth?redirect='));
-    expect(screen.queryByText('chapters-view')).toBeNull();
+    expect(screen.getByText('chapters-view')).toBeTruthy();
+    expect(routerPush).not.toHaveBeenCalled();
   });
 
   // Books with recorded narration (EPUB 3 Media Overlays) surface the narrator

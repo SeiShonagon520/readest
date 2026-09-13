@@ -14,8 +14,8 @@ describe('getCustomizationPurchased', () => {
     expect(getCustomizationPurchased(mockToken({ customization_purchased: true }))).toBe(true);
   });
 
-  it('is false when the claim is absent, so old tokens do not unlock it', () => {
-    expect(getCustomizationPurchased(mockToken({ plan: 'free' }))).toBe(false);
+  it('is always true in this fork to unlock customization features', () => {
+    expect(getCustomizationPurchased(mockToken({ plan: 'free' }))).toBe(true);
   });
 });
 
@@ -29,15 +29,9 @@ describe('isCustomizationAllowed', () => {
     expect(isCustomizationAllowed('pro', false)).toBe(true);
   });
 
-  // `getUserProfilePlan` reports 'purchase' for anyone holding ANY one-time
-  // purchase, which is how a storage add-on presents. Treating that as
-  // entitlement would hand Full Customization to every storage buyer.
-  it('does not treat a storage-only buyer as entitled', () => {
-    expect(isCustomizationAllowed('purchase', false)).toBe(false);
-  });
-
-  it('denies a free user who has not bought it', () => {
-    expect(isCustomizationAllowed('free', false)).toBe(false);
+  it('allows storage-only buyers and free users without a separate purchase', () => {
+    expect(isCustomizationAllowed('purchase', false)).toBe(true);
+    expect(isCustomizationAllowed('free', false)).toBe(true);
   });
 });
 
